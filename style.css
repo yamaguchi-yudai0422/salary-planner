@@ -156,6 +156,11 @@ select {
   border: 1px solid rgba(199, 100, 45, 0.2);
 }
 
+.danger-btn {
+  color: #b24b1e;
+  border-color: rgba(178, 75, 30, 0.24);
+}
+
 .primary-btn {
   background: linear-gradient(135deg, var(--accent), #dc8b44);
   color: white;
@@ -468,6 +473,12 @@ select {
   gap: 10px;
 }
 
+.month-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .weekday-option {
   display: inline-flex;
   align-items: center;
@@ -479,7 +490,23 @@ select {
   color: var(--text);
 }
 
+.month-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 248, 240, 0.9);
+  border: 1px solid rgba(199, 100, 45, 0.16);
+  color: var(--text);
+}
+
 .weekday-option input {
+  width: auto;
+  margin: 0;
+}
+
+.month-option input {
   width: auto;
   margin: 0;
 }
@@ -642,5 +669,9 @@ select {
   .entry-row-grid {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .month-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

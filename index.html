@@ -42,6 +42,7 @@
                 <button id="prevMonthBtn" class="ghost-btn" type="button">前の月</button>
                 <button id="todayBtn" class="ghost-btn" type="button">今月へ</button>
                 <button id="nextMonthBtn" class="ghost-btn" type="button">次の月</button>
+                <button id="clearMonthBtn" class="ghost-btn danger-btn" type="button">クリア</button>
               </div>
             </div>
             <div class="weekdays" id="weekdayHeader"></div>
@@ -73,13 +74,11 @@
               <p class="section-label">日付入力</p>
               <h2 id="selectedDateLabel">日付を選択</h2>
             </div>
-            <button id="backToCalendarBtn" class="ghost-btn" type="button">戻る</button>
           </div>
 
           <form id="entryForm" class="entry-form">
             <div class="entry-list-header">
               <span>勤務明細</span>
-              <button id="addEntryRowBtn" class="ghost-btn" type="button">追加</button>
             </div>
             <div id="entryRows" class="entry-rows"></div>
             <div class="entry-preview">
@@ -88,7 +87,9 @@
             </div>
             <div class="button-row">
               <button class="primary-btn" type="submit">保存</button>
-              <button id="resetEntryBtn" class="ghost-btn" type="button">手入力を削除</button>
+              <button id="addEntryRowBtn" class="ghost-btn" type="button">追加</button>
+              <button id="resetEntryBtn" class="ghost-btn" type="button">その日を削除</button>
+              <button id="backToCalendarBtn" class="ghost-btn" type="button">戻る</button>
             </div>
           </form>
         </section>
@@ -171,6 +172,10 @@
             <fieldset class="weekday-picker">
               <legend>曜日</legend>
               <div id="weekdayCheckboxes" class="weekday-options"></div>
+            </fieldset>
+            <fieldset class="month-picker">
+              <legend>月</legend>
+              <div id="monthCheckboxes" class="month-options"></div>
             </fieldset>
             <div class="button-row">
               <button class="primary-btn" type="submit">テンプレ保存</button>

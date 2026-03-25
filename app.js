@@ -44,6 +44,7 @@ const elements = {
   prevMonthBtn: document.getElementById("prevMonthBtn"),
   nextMonthBtn: document.getElementById("nextMonthBtn"),
   todayBtn: document.getElementById("todayBtn"),
+  clearMonthBtn: document.getElementById("clearMonthBtn"),
   navCalendarBtn: document.getElementById("navCalendarBtn"),
   navSummaryBtn: document.getElementById("navSummaryBtn"),
   navTemplateBtn: document.getElementById("navTemplateBtn"),
@@ -54,6 +55,7 @@ const elements = {
   templateWageInput: document.getElementById("templateWageInput"),
   templateHoursInput: document.getElementById("templateHoursInput"),
   weekdayCheckboxes: document.getElementById("weekdayCheckboxes"),
+  monthCheckboxes: document.getElementById("monthCheckboxes"),
   cancelTemplateEditBtn: document.getElementById("cancelTemplateEditBtn"),
   templateList: document.getElementById("templateList"),
 };
@@ -63,6 +65,7 @@ init();
 function init() {
   renderWeekdayHeader();
   renderWeekdayCheckboxes();
+  renderMonthCheckboxes();
   bindEvents();
   refreshAll();
 }
@@ -84,6 +87,8 @@ function bindEvents() {
     state.selectedDate = formatDateKey(now);
     refreshAll();
   });
+
+  elements.clearMonthBtn.addEventListener("click", clearVisibleMonth);
 
   elements.openEntryEditorBtn.addEventListener("click", () => setView("entry"));
   elements.backToCalendarBtn.addEventListener("click", () => setView("calendar"));
@@ -116,7 +121,21 @@ function bindEvents() {
   });
 
   elements.resetEntryBtn.addEventListener("click", () => {
-    delete state.data.entries[state.selectedDate];
+    const saved = state.data.entries[state.selectedDate];
+    const effective = getEffectiveEntry(state.selectedDate);
+
+    if (saved?.items?.length) {
+      delete state.data.entries[state.selectedDate];
+    } else if (effective?.source === "template") {
+      state.data.entries[state.selectedDate] = {
+        date: state.selectedDate,
+        items: [],
+        blockedAuto: true,
+      };
+    } else {
+      delete state.data.entries[state.selectedDate];
+    }
+
     persist();
     refreshAll();
   });
@@ -150,6 +169,15 @@ function renderWeekdayCheckboxes() {
     <label class="weekday-option">
       <input type="checkbox" value="${index}">
       <span>${day}</span>
+    </label>
+  `).join("");
+}
+
+function renderMonthCheckboxes() {
+  elements.monthCheckboxes.innerHTML = Array.from({ length: 12 }, (_, index) => `
+    <label class="month-option">
+      <input type="checkbox" value="${index + 1}">
+      <span>${index + 1}月</span>
     </label>
   `).join("");
 }
@@ -281,6 +309,7 @@ function renderTemplateList() {
             <span>時給 ¥${formatNumber(template.hourlyWage)}</span>
             <span>労働時間 ${trimNumber(template.hours)} 時間</span>
             <span>曜日 ${template.weekdays.length ? template.weekdays.map((day) => WEEKDAYS[day]).join("・") : "指定なし"}</span>
+            <span>月 ${formatTemplateMonths(template)}</span>
           </div>
         </div>
         <div class="button-row">
@@ -334,6 +363,7 @@ function saveTemplate() {
   const hourlyWage = Number(elements.templateWageInput.value);
   const hours = Number(elements.templateHoursInput.value);
   const weekdays = Array.from(elements.weekdayCheckboxes.querySelectorAll("input:checked")).map((input) => Number(input.value));
+  const months = Array.from(elements.monthCheckboxes.querySelectorAll("input:checked")).map((input) => Number(input.value));
 
   if (!name || !hourlyWage || !hours) {
     return;
@@ -345,6 +375,7 @@ function saveTemplate() {
     hourlyWage,
     hours,
     weekdays,
+    months: months.length > 0 ? months : Array.from({ length: 12 }, (_, index) => index + 1),
   };
 
   const existingIndex = state.data.templates.findIndex((template) => template.id === payload.id);
@@ -372,6 +403,10 @@ function editTemplate(templateId) {
   elements.weekdayCheckboxes.querySelectorAll("input").forEach((input) => {
     input.checked = template.weekdays.includes(Number(input.value));
   });
+  const selectedMonths = normalizeTemplateMonths(template);
+  elements.monthCheckboxes.querySelectorAll("input").forEach((input) => {
+    input.checked = selectedMonths.includes(Number(input.value));
+  });
 }
 
 function deleteTemplate(templateId) {
@@ -396,6 +431,9 @@ function deleteTemplate(templateId) {
 function resetTemplateForm() {
   elements.templateForm.reset();
   elements.templateIdInput.value = "";
+  elements.monthCheckboxes.querySelectorAll("input").forEach((input) => {
+    input.checked = false;
+  });
 }
 
 function setView(view) {
@@ -473,6 +511,9 @@ function renderWorkplaceMonthlySummary(workplaces) {
 function getEffectiveEntry(dateKey) {
   const saved = state.data.entries[dateKey];
   if (saved) {
+    if (saved.blockedAuto && (!saved.items || saved.items.length === 0)) {
+      return null;
+    }
     const items = normalizeEntryItems(saved.items || [saved]);
     const summary = summarizeItems(items);
     return {
@@ -484,7 +525,11 @@ function getEffectiveEntry(dateKey) {
   }
 
   const date = parseDateKey(dateKey);
-  const templates = state.data.templates.filter((item) => item.weekdays.includes(date.getDay()));
+  const monthNumber = date.getMonth() + 1;
+  const templates = state.data.templates.filter((item) => {
+    const months = normalizeTemplateMonths(item);
+    return item.weekdays.includes(date.getDay()) && months.includes(monthNumber);
+  });
   if (templates.length === 0) {
     return null;
   }
@@ -690,6 +735,41 @@ function createEntryItemDraft() {
     hours: "",
     memo: "",
   };
+}
+
+function clearVisibleMonth() {
+  const year = state.viewDate.getFullYear();
+  const month = state.viewDate.getMonth() + 1;
+  const confirmed = window.confirm(`${year}年${month}月の入力をすべてクリアします。よろしいですか？`);
+  if (!confirmed) {
+    return;
+  }
+
+  const zeroBasedMonth = state.viewDate.getMonth();
+  const lastDay = new Date(year, zeroBasedMonth + 1, 0).getDate();
+
+  for (let day = 1; day <= lastDay; day += 1) {
+    const dateKey = formatDateKey(new Date(year, zeroBasedMonth, day));
+    delete state.data.entries[dateKey];
+  }
+
+  persist();
+  refreshAll();
+}
+
+function normalizeTemplateMonths(template) {
+  if (template.months?.length) {
+    return template.months.map(Number);
+  }
+  return Array.from({ length: 12 }, (_, index) => index + 1);
+}
+
+function formatTemplateMonths(template) {
+  const months = normalizeTemplateMonths(template);
+  if (months.length === 12) {
+    return "全年";
+  }
+  return months.map((month) => `${month}月`).join("・");
 }
 
 function getWorkplaceAccentClass(items) {
