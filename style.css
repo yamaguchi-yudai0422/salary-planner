@@ -190,6 +190,10 @@ select {
   font-size: 0.9rem;
 }
 
+.weekdays span.holiday-label {
+  color: #c2533a;
+}
+
 .calendar-day {
   min-height: 82px;
   padding: 10px;
@@ -222,6 +226,14 @@ select {
 
 .calendar-day.today .day-number {
   color: var(--accent-deep);
+}
+
+.calendar-day.holiday .day-number {
+  color: #c2533a;
+}
+
+.calendar-day.holiday {
+  background: linear-gradient(180deg, rgba(255, 241, 236, 0.96), rgba(255, 249, 244, 0.95));
 }
 
 .day-number {
@@ -618,6 +630,17 @@ select {
     right: auto;
     width: 520px;
     transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 641px) {
+  .entry-row-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .entry-row-delete {
+    min-width: 0;
   }
 }
 

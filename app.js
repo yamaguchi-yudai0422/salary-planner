@@ -8,6 +8,7 @@ const state = {
   monthSummary: formatMonthInput(new Date()),
   yearSummary: new Date().getFullYear(),
   currentView: "calendar",
+  holidayCache: {},
   data: loadState(),
 };
 
@@ -161,7 +162,7 @@ function refreshAll() {
 }
 
 function renderWeekdayHeader() {
-  elements.weekdayHeader.innerHTML = WEEKDAYS.map((day) => `<span>${day}</span>`).join("");
+  elements.weekdayHeader.innerHTML = WEEKDAYS.map((day, index) => `<span class="${index === 0 ? "holiday-label" : ""}">${day}</span>`).join("");
 }
 
 function renderWeekdayCheckboxes() {
@@ -185,6 +186,7 @@ function renderMonthCheckboxes() {
 function renderCalendar() {
   const year = state.viewDate.getFullYear();
   const month = state.viewDate.getMonth();
+  ensureHolidayData(year);
   elements.calendarTitle.textContent = `${year}年${month + 1}月`;
 
   const firstDay = new Date(year, month, 1);
@@ -202,9 +204,11 @@ function renderCalendar() {
     const isSelected = dateKey === state.selectedDate;
     const isOutside = cellDate.getMonth() !== month;
     const isToday = dateKey === todayKey;
+    const holidayName = state.holidayCache[year]?.[dateKey];
+    const isHoliday = Boolean(holidayName);
 
     cells.push(`
-      <button class="calendar-day ${isSelected ? "selected" : ""} ${isOutside ? "outside" : ""} ${isToday ? "today" : ""}" type="button" data-date="${dateKey}">
+      <button class="calendar-day ${isSelected ? "selected" : ""} ${isOutside ? "outside" : ""} ${isToday ? "today" : ""} ${isHoliday ? "holiday" : ""}" type="button" data-date="${dateKey}" title="${holidayName || ""}">
         <div class="day-topline">
           <span class="day-number">${cellDate.getDate()}</span>
           ${effective?.items?.length ? `<span class="day-count">${effective.items.length}件</span>` : ""}
@@ -770,6 +774,28 @@ function formatTemplateMonths(template) {
     return "全年";
   }
   return months.map((month) => `${month}月`).join("・");
+}
+
+function ensureHolidayData(year) {
+  if (state.holidayCache[year] !== undefined) {
+    return;
+  }
+
+  state.holidayCache[year] = null;
+  fetch(`https://holidays-jp.github.io/api/v1/${year}/date.json`)
+    .then((response) => response.ok ? response.json() : {})
+    .then((data) => {
+      state.holidayCache[year] = data || {};
+      if (state.viewDate.getFullYear() === year) {
+        renderCalendar();
+      }
+    })
+    .catch(() => {
+      state.holidayCache[year] = {};
+      if (state.viewDate.getFullYear() === year) {
+        renderCalendar();
+      }
+    });
 }
 
 function getWorkplaceAccentClass(items) {
