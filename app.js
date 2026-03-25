@@ -162,7 +162,12 @@ function refreshAll() {
 }
 
 function renderWeekdayHeader() {
-  elements.weekdayHeader.innerHTML = WEEKDAYS.map((day, index) => `<span class="${index === 0 ? "holiday-label" : ""}">${day}</span>`).join("");
+  elements.weekdayHeader.innerHTML = WEEKDAYS.map((day, index) => {
+    const classNames = [];
+    if (index === 0) classNames.push("holiday-label");
+    if (index === 6) classNames.push("saturday-label");
+    return `<span class="${classNames.join(" ")}">${day}</span>`;
+  }).join("");
 }
 
 function renderWeekdayCheckboxes() {
@@ -206,9 +211,12 @@ function renderCalendar() {
     const isToday = dateKey === todayKey;
     const holidayName = state.holidayCache[year]?.[dateKey];
     const isHoliday = Boolean(holidayName);
+    const dayOfWeek = cellDate.getDay();
+    const isSunday = dayOfWeek === 0;
+    const isSaturday = dayOfWeek === 6;
 
     cells.push(`
-      <button class="calendar-day ${isSelected ? "selected" : ""} ${isOutside ? "outside" : ""} ${isToday ? "today" : ""} ${isHoliday ? "holiday" : ""}" type="button" data-date="${dateKey}" title="${holidayName || ""}">
+      <button class="calendar-day ${isSelected ? "selected" : ""} ${isOutside ? "outside" : ""} ${isToday ? "today" : ""} ${isHoliday ? "holiday" : ""} ${isSunday ? "sunday" : ""} ${isSaturday ? "saturday" : ""}" type="button" data-date="${dateKey}" title="${holidayName || ""}">
         <div class="day-topline">
           <span class="day-number">${cellDate.getDate()}</span>
           ${effective?.items?.length ? `<span class="day-count">${effective.items.length}件</span>` : ""}

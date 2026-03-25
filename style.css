@@ -194,6 +194,10 @@ select {
   color: #c2533a;
 }
 
+.weekdays span.saturday-label {
+  color: #4e78b8;
+}
+
 .calendar-day {
   min-height: 82px;
   padding: 10px;
@@ -226,6 +230,14 @@ select {
 
 .calendar-day.today .day-number {
   color: var(--accent-deep);
+}
+
+.calendar-day.sunday .day-number {
+  color: #c2533a;
+}
+
+.calendar-day.saturday .day-number {
+  color: #4e78b8;
 }
 
 .calendar-day.holiday .day-number {
